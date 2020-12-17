@@ -1,6 +1,7 @@
 import hail as hl
 
 from lib.model.base_mt_schema import BaseMTSchema, row_annotation, RowAnnotationOmit
+from lib.model.mcri_seqr_mt_schema import SeqrGenetaleSchema
 from hail_scripts.v02.utils.computed_fields import variant_id
 from hail_scripts.v02.utils.computed_fields import vep
 
@@ -260,7 +261,7 @@ class SeqrGenotypesSchema(BaseMTSchema):
         }
 
 
-class SeqrVariantsAndGenotypesSchema(SeqrVariantSchema, SeqrGenotypesSchema):
+class SeqrVariantsAndGenotypesSchema(SeqrGenetaleSchema, SeqrVariantSchema, SeqrGenotypesSchema):
     """
     Combined variant and genotypes.
     """
