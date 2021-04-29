@@ -124,7 +124,8 @@ class SeqrVCFToMTTask(HailMatrixTableTask):
         :return: mt that has pre-annotations
         """
         # Named `locus_old` instead of `old_locus` because split_multi_hts drops `old_locus`.
-        return hl.split_multi_hts(mt.annotate_rows(locus_old=mt.locus, alleles_old=mt.alleles))
+        # return hl.split_multi(mt.annotate_rows(locus_old=mt.locus, alleles_old=mt.alleles), permit_shuffle=True)
+        return hl.split_multi_hts(mt.annotate_rows(locus_old=mt.locus, alleles_old=mt.alleles), permit_shuffle=True)
 
     @staticmethod
     def validate_mt(mt, genome_version, sample_type):
