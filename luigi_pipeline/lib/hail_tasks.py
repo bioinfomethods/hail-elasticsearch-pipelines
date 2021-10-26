@@ -86,6 +86,7 @@ class HailMatrixTableTask(luigi.Task):
                              reference_genome='GRCh' + self.genome_version,
                              skip_invalid_loci=True,
                              contig_recoding=recode,
+                             array_elements_required=False,
                              force_bgz=True, min_partitions=500)
 
     @staticmethod
