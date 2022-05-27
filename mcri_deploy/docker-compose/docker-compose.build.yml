@@ -1,0 +1,7 @@
+version: '3.4'
+
+services:
+
+  pipeline-runner:
+    build:
+      context: ../../docker
