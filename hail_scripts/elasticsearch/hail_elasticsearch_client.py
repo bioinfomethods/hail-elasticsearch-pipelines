@@ -189,6 +189,11 @@ class HailElasticsearchClient(ElasticsearchClient):
             block_size,
         )
 
+        elasticsearch_config.update({
+            'es.batch.size.bytes': '10mb',
+            'es.batch.size.entries': '1000',
+            'es.batch.write.refresh': 'false',
+        })
         hl.export_elasticsearch(
             table, self._host, int(self._port), index_name, index_type_name, block_size, elasticsearch_config, verbose
         )
