@@ -73,7 +73,7 @@ build() {
     done
 
     # Tagging
-    HEP_GIT_BRANCH_NAME=$(git branch --format='%(refname:short)')
+    HEP_GIT_BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
     HEP_GIT_BRANCH_TAG=${HEP_GIT_BRANCH_NAME/\//_}
     HEP_LONG_GIT_TAG=$(git describe --long --always)
 
