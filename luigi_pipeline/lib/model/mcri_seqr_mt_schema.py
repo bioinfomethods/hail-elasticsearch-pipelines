@@ -2,6 +2,21 @@ import hail as hl
 from lib.model.base_mt_schema import BaseMTSchema, row_annotation
 
 
+class SeqrMcriStatsVariantSchema(BaseMTSchema):
+
+    @row_annotation(name='pop_mcri_AC')
+    def acMcri(self):
+        return self.mt.info.get('AC-mcri', hl.missing('int'))
+
+    @row_annotation(name='pop_mcri_AN')
+    def anMcri(self):
+        return self.mt.info.get('AN-mcri', hl.missing('int'))
+
+    @row_annotation(name='pop_mcri_AF')
+    def afMcri(self):
+        return self.mt.info.get('AF-mcri', hl.missing('float'))
+
+
 class SeqrGenetaleSchema(BaseMTSchema):
 
     @row_annotation(name='genetale_all_diseases')
