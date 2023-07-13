@@ -6,15 +6,15 @@ class SeqrMcriStatsVariantSchema(BaseMTSchema):
 
     @row_annotation(name='pop_mcri_AC')
     def acMcri(self):
-        return self.mt.info.get('AC-mcri', hl.missing('int'))
+        return self.mt.info.get('AC-mcri', hl.missing(hl.int))
 
     @row_annotation(name='pop_mcri_AN')
     def anMcri(self):
-        return self.mt.info.get('AN-mcri', hl.missing('int'))
+        return self.mt.info.get('AN-mcri', hl.missing(hl.int))
 
     @row_annotation(name='pop_mcri_AF')
     def afMcri(self):
-        return self.mt.info.get('AF-mcri', hl.missing('float'))
+        return self.mt.info.get('AF-mcri', hl.missing(hl.float))
 
 
 class SeqrGenetaleSchema(BaseMTSchema):
