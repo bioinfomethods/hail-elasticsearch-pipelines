@@ -1,20 +1,30 @@
 import hail as hl
+
 from lib.model.base_mt_schema import BaseMTSchema, row_annotation
+
+"""
+This module contains the schema for MCRI Seqr variant custom annotations.
+
+Some things to watch for:
+
+* Annotation names in VCF should not contain hyphens
+* Make sure INFO field type declarations in the VCF header match the type of the annotation 
+"""
 
 
 class SeqrMcriStatsVariantSchema(BaseMTSchema):
 
     @row_annotation(name='pop_mcri_AC')
     def acMcri(self):
-        return self.mt.info.get('AC-mcri', hl.missing(hl.int))
+        return self.mt.info.get('AC_MCRI', hl.missing(hl.tint))
 
     @row_annotation(name='pop_mcri_AN')
     def anMcri(self):
-        return self.mt.info.get('AN-mcri', hl.missing(hl.int))
+        return self.mt.info.get('AN_MCRI', hl.missing(hl.tint))
 
     @row_annotation(name='pop_mcri_AF')
     def afMcri(self):
-        return self.mt.info.get('AF-mcri', hl.missing(hl.float))
+        return self.mt.info.get('AF_MCRI', hl.missing(hl.tfloat))
 
 
 class SeqrGenetaleSchema(BaseMTSchema):
