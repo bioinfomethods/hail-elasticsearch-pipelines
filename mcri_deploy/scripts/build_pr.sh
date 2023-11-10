@@ -80,7 +80,7 @@ build() {
 }
 
 build_pr() {
-    info "Building pipeline-runner component only"
+    info "Building pipeline-runner component only, BUILD_OPTS=$BUILD_OPTS"
     set -x
     docker compose --verbose \
       -f "$COMPOSE_FILE" \
