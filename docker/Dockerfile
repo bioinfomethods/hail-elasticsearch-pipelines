@@ -1,4 +1,4 @@
-FROM bitnami/minideb:stretch
+FROM bitnami/minideb:buster
 
 LABEL maintainer="Broad TGG"
 
@@ -24,17 +24,17 @@ RUN install_packages \
     libbz2-dev \
     liblzma-dev
 
-# install java-8    (adds 340Mb)
-RUN install_packages default-jdk
-
-# install python3.7 (adds 800Mb)
 RUN apt-get update \
 	&& apt-get dist-upgrade -y \
 	&& apt-get install -y --no-install-recommends python-smbus libncursesw5-dev libgdbm-dev libc6-dev zlib1g-dev libsqlite3-dev libssl-dev openssl libffi-dev \
 	&& apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PYTHON_VERSION="3.7.1"
+RUN install_packages ca-certificates-java && install_packages default-jdk
+
+ENV PYTHON_VERSION="3.9.18"
+ENV PYTHON_RELEASE="3.9"
+
 RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz \
 	&& tar xvf Python-${PYTHON_VERSION}.tar.xz \
 	&& rm Python-${PYTHON_VERSION}.tar.xz
@@ -46,14 +46,14 @@ WORKDIR /
 
 RUN install_packages python-pkg-resources
 
-
 # install gcloud tools
 RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install --no-cache-dir -U crcmod
 
+ENV GCLOUD_CLI_VERSION="454.0.0"
 ENV CLOUDSDK_PYTHON=python3
-RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-286.0.0-linux-x86_64.tar.gz
-RUN tar xzf google-cloud-sdk-286.0.0-linux-x86_64.tar.gz && rm google-cloud-sdk-286.0.0-linux-x86_64.tar.gz
+RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
+RUN tar xzf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz && rm google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
 RUN /google-cloud-sdk/install.sh -q
 
 # python packages
@@ -62,11 +62,11 @@ RUN python3 -m pip install --upgrade gsutil
 # install GCS connector using the same steps as in https://raw.githubusercontent.com/broadinstitute/install-gcs-connector/master/install_gcs_connector.py
 # assumes ~/.config/gcloud/application_default_credentials.json will be mounted into the docker container
 RUN python3 -m pip install hail
-COPY docker/spark-defaults.conf /usr/local/lib/python3.7/site-packages/pyspark/conf/spark-defaults.conf
-RUN wget https://repo1.maven.org/maven2/com/google/cloud/bigdataoss/gcs-connector/hadoop2-1.9.17/gcs-connector-hadoop2-1.9.17-shaded.jar -O /usr/local/lib/python3.7/site-packages/pyspark/jars/gcs-connector-hadoop2-1.9.17-shaded.jar
+COPY docker/spark-defaults.conf /usr/local/lib/python${PYTHON_RELEASE}/site-packages/pyspark/conf/spark-defaults.conf
+RUN wget https://repo1.maven.org/maven2/com/google/cloud/bigdataoss/gcs-connector/hadoop2-2.2.9/gcs-connector-hadoop2-2.2.9-shaded.jar -O /usr/local/lib/python${PYTHON_RELEASE}/site-packages/pyspark/jars/gcs-connector-hadoop2-2.2.9-shaded.jar
 
 # install htslib
-ENV SAMTOOLS_VERSION="1.9"
+ENV SAMTOOLS_VERSION="1.18"
 RUN wget https://github.com/samtools/htslib/releases/download/${SAMTOOLS_VERSION}/htslib-${SAMTOOLS_VERSION}.tar.bz2 \
 	&& tar xjf htslib-${SAMTOOLS_VERSION}.tar.bz2 \
 	&& rm htslib-${SAMTOOLS_VERSION}.tar.bz2
@@ -79,7 +79,7 @@ WORKDIR /
 
 # install VEP dependencies
 RUN wget https://raw.github.com/miyagawa/cpanminus/master/cpanm -O /usr/bin/cpanm && chmod +x /usr/bin/cpanm
-ENV VEP_VERSION="99"
+ENV VEP_VERSION="106"
 RUN wget https://github.com/Ensembl/ensembl-vep/archive/release/${VEP_VERSION}.zip \
     && unzip ${VEP_VERSION}.zip \
     && rm ${VEP_VERSION}.zip
@@ -100,9 +100,6 @@ WORKDIR /ensembl-vep-release-${VEP_VERSION}
 RUN perl INSTALL.pl -a ap -n -l -g all
 RUN ln -s /ensembl-vep-release-${VEP_VERSION}/vep /vep
 
-# install hail utils
-RUN python3 -m pip install git+https://github.com/bw2/hail-utils.git
-
 WORKDIR /seqr-loading-pipelines
 COPY requirements.txt .
 RUN python3 -m pip install -r ./requirements.txt
@@ -118,7 +115,7 @@ COPY docker/bashrc /root/.bashrc
 COPY docker/gitconfig /root/.gitconfig
 COPY docker/bin/*.sh /usr/local/bin/
 
-ENV PATH=/usr/local/lib/python3.7/site-packages/pyspark/bin:/google-cloud-sdk/bin:$PATH
+ENV PATH=/usr/local/lib/python${PYTHON_RELEASE}/site-packages/pyspark/bin:/google-cloud-sdk/bin:$PATH
 ENV PYTHONPATH=".:/seqr-loading-pipelines:/seqr-loading-pipelines/luigi_pipeline"
 
 COPY docker/entrypoint.sh /
