@@ -1,4 +1,4 @@
-FROM bitnami/minideb:buster
+FROM bitnami/minideb:bullseye
 
 LABEL maintainer="Broad TGG"
 
@@ -26,12 +26,13 @@ RUN install_packages \
 
 RUN apt-get update \
 	&& apt-get dist-upgrade -y \
-	&& apt-get install -y --no-install-recommends python-smbus libncursesw5-dev libgdbm-dev libc6-dev zlib1g-dev libsqlite3-dev libssl-dev openssl libffi-dev \
+	&& apt-get install -y --no-install-recommends libncursesw5-dev libgdbm-dev libc6-dev zlib1g-dev libsqlite3-dev libssl-dev openssl libffi-dev sudo \
 	&& apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 RUN install_packages ca-certificates-java && install_packages default-jdk
 
+ENV JAVA_HOME=/usr/lib/jvm/default-java
 ENV PYTHON_VERSION="3.9.18"
 ENV PYTHON_RELEASE="3.9"
 
