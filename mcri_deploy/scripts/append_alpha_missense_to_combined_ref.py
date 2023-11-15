@@ -3,7 +3,7 @@ hl.init()
 
 COMBINED_REF_DATA_HT = "/hpc/genomeref/hg38/seqr/seqr-reference-data/all_reference_data/combined_reference_data_grch38.ht"
 MCRI_COMBINED_REF_DATA_HT = "/hpc/genomeref/hg38/seqr/seqr-reference-data/all_reference_data/combined_reference_data_grch38.mcri.20231115.ht"
-ALPHA_MISSENSE_VARIANTS = "/hpc/genomeref/hg38/seqr/AlphaMissense_20230919/AlphaMissense_hg38.tsv.gz"
+ALPHA_MISSENSE_VARIANTS = "/hpc/genomeref/hg38/seqr/AlphaMissense_20230919/AlphaMissense_hg38.nocopy.tsv.gz"
 
 # %%
 # Read Seqr combined reference data

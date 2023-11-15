@@ -174,4 +174,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# Bpipe
+.bpipe
+1_FINISHED.txt
+commandlog.txt
+*_finished.txt
+
 tmp
