@@ -106,7 +106,7 @@ ref_ht_with_am.write("/workspaces/seqr-loading-pipelines/tmp/ref_ht_with_am.ht",
 
 # %%
 # Read example seqr import table
-mt = hl.read_matrix_table("gs://mcri-seqr-imports/R0029_test_project_grch38/e8e3016b455b97fe39eb6fab33caa57832b3326c/e8e3016b455b97fe39eb6fab33caa57832b3326c.mt")
+mt = hl.read_matrix_table("gs://mcri-seqr-imports/R0029_test_project_grch38/8e44b1fa510b2a35929c755cc128b1d69e8a0bdd/8e44b1fa510b2a35929c755cc128b1d69e8a0bdd.mt")
 
 # %%
 mt.describe()
@@ -121,4 +121,6 @@ mt.rows().show()
 # %%
 mt.cols().show()
 # %%
-mt.globals_table.describe()
+
+# find where alpha_missense.am_class is not NA
+mt.filter_rows(hl.is_defined(mt.alpha_missense.am_class)).rows().show()
