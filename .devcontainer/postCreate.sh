@@ -42,6 +42,7 @@ if [ "$CONTAINER_IMAGE_MODE" = "mcri" ]; then
 
     # pip install -r requirements.txt
     pip install -r requirements-dev.txt
+    python3 "$PROJECT_DIR/mcri_deploy/install_gcs_connector.py"
 
     info "MCRI ZScaler workaround complete, appended SSL_CERT_FILE to REQUESTS_CA_BUNDLE ($REQUESTS_CA_BUNDLE)"
 fi
