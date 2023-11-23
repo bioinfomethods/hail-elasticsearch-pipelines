@@ -63,7 +63,7 @@ build() {
     COMPOSE_FILE="$PROJECT_DIR/mcri_deploy/docker-compose/docker-compose.yml"
     COMPOSE_BUILD_FILE="$PROJECT_DIR/mcri_deploy/docker-compose/docker-compose.build.yml"
 
-    cp "$PROJECT_DIR/mcri_deploy/docker-compose/slp.template.env" "$PROJECT_DIR/.env"
+    cp "$PROJECT_DIR/.env.template" "$PROJECT_DIR/.env"
     COMPOSE_ENV_FILE="$PROJECT_DIR/.env"
     
     for line in $(grep -v '^#' "$PROJECT_DIR/.env" | xargs)
