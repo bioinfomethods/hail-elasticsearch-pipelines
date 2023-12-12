@@ -1,6 +1,6 @@
 ARG mode=mcri
 
-FROM gcr.io/mcri-01/pipeline-runner:develop as img_mcri
+FROM asia.gcr.io/mcri-01/pipeline-runner:develop as img_mcri
 
 ONBUILD ENV SSL_CERT_FILE="/usr/local/share/ca-certificates/ZscalerRootCertificate-2048-SHA256.crt"
 ONBUILD RUN curl -o "$SSL_CERT_FILE" http://repo.mcri.edu.au/ZCC/Certs/ZscalerRootCerts/ZscalerRootCertificate-2048-SHA256.crt

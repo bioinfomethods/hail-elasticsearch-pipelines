@@ -3,6 +3,6 @@ version: '3.4'
 services:
 
   pipeline-runner:
-    image: ${CONTAINER_REGISTRY:-gcr.io/mcri-01}/${PIPELINE_RUNNER_IMAGE_NAME:-pipeline-runner}:${PIPELINE_RUNNER_IMAGE_TAG:-latest}
+    image: ${CONTAINER_REGISTRY:-asia.gcr.io/mcri-01}/${PIPELINE_RUNNER_IMAGE_NAME:-pipeline-runner}:${PIPELINE_RUNNER_IMAGE_TAG:-latest}
     volumes:
       - ~/.config/gcloud:/root/.config/gcloud
