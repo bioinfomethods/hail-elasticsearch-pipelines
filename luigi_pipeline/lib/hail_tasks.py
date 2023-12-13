@@ -1,11 +1,11 @@
 """
 Tasks for Hail.
 """
-from collections import Counter
 import json
 import logging
 import math
 import os
+from collections import Counter
 
 import hail as hl
 import luigi
@@ -13,8 +13,9 @@ from luigi.contrib import gcs
 from luigi.parameter import ParameterVisibility
 
 from hail_scripts.elasticsearch.hail_elasticsearch_client import HailElasticsearchClient
-from lib.global_config import GlobalConfig
-import lib.hail_vep_runners as vep_runners
+
+import luigi_pipeline.lib.hail_vep_runners as vep_runners
+from luigi_pipeline.lib.global_config import GlobalConfig
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,8 @@ class HailMatrixTableTask(luigi.Task):
     genome_version = luigi.Parameter(description='Reference Genome Version (37 or 38)')
     vep_runner = luigi.ChoiceParameter(choices=['VEP', 'DUMMY'], default='VEP', description='Choice of which vep runner'
                                                                                             'to annotate vep.')
+    ignore_missing_samples_when_remapping = luigi.BoolParameter(default=False, description='Allow missing samples in the callset when remapping ids')
+    ignore_missing_samples_when_subsetting = luigi.BoolParameter(default=False, description='Allow missing samples in the callset when subsetting to a selection of ids')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -103,8 +106,8 @@ class HailMatrixTableTask(luigi.Task):
         """
         stats = {}
         types_to_ht_path = {
-            'noncoding': GlobalConfig().param_kwargs['validation_%s_noncoding_ht' % genome_version],
-            'coding': GlobalConfig().param_kwargs['validation_%s_coding_ht' % genome_version]
+            'noncoding': GlobalConfig().param_kwargs[f'validation_{genome_version}_noncoding_ht'],
+            'coding': GlobalConfig().param_kwargs[f'validation_{genome_version}_coding_ht']
         }
         for sample_type, ht_path in types_to_ht_path.items():
             ht = hl.read_table(ht_path)
@@ -124,8 +127,10 @@ class HailMatrixTableTask(luigi.Task):
 
         return runners[runner]().run(mt, genome_version, vep_config_json_path=vep_config_json_path)
 
-    @staticmethod
-    def subset_samples_and_variants(mt, subset_path):
+    def relevant_variant_filter_fn(self, mt):
+        return mt.GT.is_non_ref()
+
+    def subset_samples_and_variants(self, mt, subset_path):
         """
         Subset the MatrixTable to the provided list of samples and to variants present in those samples
         :param mt: MatrixTable from VCF
@@ -139,22 +144,23 @@ class HailMatrixTableTask(luigi.Task):
 
         if anti_join_ht_count != 0:
             missing_samples = anti_join_ht.s.collect()
-            raise MatrixTableSampleSetError(
-                f'Only {subset_count-anti_join_ht_count} out of {subset_count} '
-                'subsetting-table IDs matched IDs in the variant callset.\n'
-                f'IDs that aren\'t in the callset: {missing_samples}\n'
-                f'All callset sample IDs:{mt.s.collect()}', missing_samples
-            )
+            message = f'Only {subset_count - anti_join_ht_count} out of {subset_count} ' \
+                      f'subsetting-table IDs matched IDs in the variant callset.\n' \
+                      f'IDs that aren\'t in the callset: {missing_samples}\n' \
+                      f'All callset sample IDs:{mt.s.collect()}'
+            if (subset_count > anti_join_ht_count) and self.ignore_missing_samples_when_subsetting:
+                logger.warning(message)
+            else:
+                raise MatrixTableSampleSetError(message, missing_samples)
 
         mt = mt.semi_join_cols(subset_ht)
-        mt = mt.filter_rows(hl.agg.any(mt.GT.is_non_ref()))
+        mt = mt.filter_rows(hl.agg.any(self.relevant_variant_filter_fn(mt)))
 
         logger.info(f'Finished subsetting samples. Kept {subset_count} '
                     f'out of {mt.count()} samples in vds')
         return mt
 
-    @staticmethod
-    def remap_sample_ids(mt, remap_path):
+    def remap_sample_ids(self, mt, remap_path):
         """
         Remap the MatrixTable's sample ID, 's', field to the sample ID used within seqr, 'seqr_id'
         If the sample 's' does not have a 'seqr_id' in the remap file, 's' becomes 'seqr_id'
@@ -163,22 +169,25 @@ class HailMatrixTableTask(luigi.Task):
         :return: MatrixTable remapped and keyed to use seqr_id
         """
         remap_ht = hl.import_table(remap_path, key='s')
-        s_dups = [k for k,v in Counter(remap_ht.s.collect()).items() if v>1]
-        seqr_dups = [k for k,v in Counter(remap_ht.seqr_id.collect()).items() if v>1]
+        collected_remap = remap_ht.collect()
+        s_dups = [k for k,v in Counter([r.s for r in collected_remap]).items() if v>1]
+        seqr_dups = [k for k,v in Counter([r.seqr_id for r in collected_remap]).items() if v>1]
         
-        if len(s_dups)>0 or len(seqr_dups)>0:
+        if len(s_dups) > 0 or len(seqr_dups) > 0:
             raise ValueError(f"Duplicate s or seqr_id entries in remap file were found. Duplicate s:{s_dups}. Duplicate seqr_id:{seqr_dups}.")
 
         missing_samples = remap_ht.anti_join(mt.cols()).collect()
-        remap_count = remap_ht.count()
+        remap_count = len(collected_remap)
 
         if len(missing_samples) != 0:
-            raise MatrixTableSampleSetError(
-                f'Only {remap_ht.semi_join(mt.cols()).count()} out of {remap_count} '
-                'remap IDs matched IDs in the variant callset.\n'
-                f'IDs that aren\'t in the callset: {missing_samples}\n'
-                f'All callset sample IDs:{mt.s.collect()}', missing_samples
-            )
+            message = f'Only {remap_ht.semi_join(mt.cols()).count()} out of {remap_count} ' \
+                      'remap IDs matched IDs in the variant callset.\n' \
+                      f'IDs that aren\'t in the callset: {missing_samples}\n' \
+                      f'All callset sample IDs:{mt.s.collect()}'
+            if self.ignore_missing_samples_when_remapping:
+                logger.warning(message)
+            else:
+                raise MatrixTableSampleSetError(message, missing_samples)
 
         mt = mt.annotate_cols(**remap_ht[mt.s])
         remap_expr = hl.cond(hl.is_missing(mt.seqr_id), mt.s, mt.seqr_id)
@@ -200,6 +209,16 @@ class HailMatrixTableTask(luigi.Task):
         mt = mt.annotate_rows(rg37_locus=hl.liftover(mt.locus, 'GRCh37'))
         return mt
 
+
+    def generate_callstats(self, mt):
+        """
+        Generate call statistics for all variants in the dataset.
+
+        :param mt: MatrixTable to generate call statistics on.
+        :return: Matrixtable with gt_stats annotation.
+        """
+        return mt.annotate_rows(gt_stats=hl.agg.call_stats(mt.GT, mt.alleles))
+        
 
 class HailElasticSearchTask(luigi.Task):
     """

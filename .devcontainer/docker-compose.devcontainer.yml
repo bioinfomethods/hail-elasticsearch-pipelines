@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+    slpdev:
+        build:
+            context: .
+            dockerfile: .devcontainer/Dockerfile
+            args:
+                mode: mcri
+        env_file:
+            - ./.env
+        environment:
+            - GIT_AUTHOR_EMAIL
+            - GIT_AUTHOR_NAME
+            - GIT_COMMITTER_EMAIL
+            - GIT_COMMITTER_NAME
+        command: sleep infinity
+        volumes:
+            - ../:/workspaces
+        networks:
+            - slp-lan
+
+    pipeline-runner:
+        networks:
+            - slp-lan
+
+networks:
+    slp-lan:
+        name: slp-lan

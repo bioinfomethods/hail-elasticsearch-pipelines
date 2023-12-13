@@ -1,14 +1,44 @@
 import hail as hl
 
-from lib.model.base_mt_schema import BaseMTSchema, row_annotation, RowAnnotationOmit
-from hail_scripts.computed_fields import variant_id
-from hail_scripts.computed_fields import vep
+from hail_scripts.computed_fields import variant_id, vep
+
+from luigi_pipeline.lib.model.base_mt_schema import (
+    BaseMTSchema,
+    RowAnnotationOmit,
+    row_annotation,
+)
 
 
-class SeqrSchema(BaseMTSchema):
+class BaseVariantSchema(BaseMTSchema):
 
-    def __init__(self, *args, ref_data, clinvar_data, hgmd_data=None, **kwargs):
+    def __init__(self, mt, *args, **kwargs):
+        super().__init__(mt)
+
+    @row_annotation(disable_index=True)
+    def contig(self):
+        return variant_id.get_expr_for_contig(self.mt.locus)
+
+    @row_annotation(disable_index=True)
+    def start(self):
+        return variant_id.get_expr_for_start_pos(self.mt)
+
+    @row_annotation()
+    def pos(self):
+        return variant_id.get_expr_for_start_pos(self.mt)
+
+    @row_annotation()
+    def xpos(self):
+        return variant_id.get_expr_for_xpos(self.mt.locus)
+
+    @row_annotation(disable_index=True)
+    def xstart(self):
+        return variant_id.get_expr_for_xpos(self.mt.locus)
+
+class BaseSeqrSchema(BaseVariantSchema):
+
+    def __init__(self, *args, ref_data, interval_ref_data, clinvar_data, hgmd_data=None, **kwargs):
         self._ref_data = ref_data
+        self._interval_ref_data = interval_ref_data
         self._clinvar_data = clinvar_data
         self._hgmd_data = hgmd_data
 
@@ -49,21 +79,7 @@ class SeqrSchema(BaseMTSchema):
     def filters(self):
         return self.mt.filters
 
-    @row_annotation(disable_index=True)
-    def aIndex(self):
-        return self.mt.a_index
-    
-    @row_annotation(disable_index=True)
-    def wasSplit(self):
-        return self.mt.was_split
-
-    @row_annotation(disable_index=True)
-    def originalAltAlleles(self):
-        # TODO: This assumes we annotate `locus_old` in this code because `split_multi_hts` drops the proper `old_locus`.
-        # If we can get it to not drop it, we should revert this to `old_locus`
-        return variant_id.get_expr_for_variant_ids(self.mt.locus_old, self.mt.alleles_old)
-
-    @row_annotation(name='sortedTranscriptConsequences', fn_require=vep)
+    @row_annotation(name='sortedTranscriptConsequences', disable_index=True, fn_require=vep)
     def sorted_transcript_consequences(self):
         return vep.get_expr_for_vep_sorted_transcript_consequences_array(self.mt.vep)
 
@@ -74,18 +90,6 @@ class SeqrSchema(BaseMTSchema):
     @row_annotation(name='variantId')
     def variant_id(self):
         return variant_id.get_expr_for_variant_id(self.mt)
-
-    @row_annotation(disable_index=True)
-    def contig(self):
-        return variant_id.get_expr_for_contig(self.mt.locus)
-
-    @row_annotation(disable_index=True)
-    def pos(self):
-        return variant_id.get_expr_for_start_pos(self.mt)
-
-    @row_annotation(disable_index=True)
-    def start(self):
-        return variant_id.get_expr_for_start_pos(self.mt)
 
     @row_annotation(disable_index=True)
     def end(self):
@@ -100,14 +104,6 @@ class SeqrSchema(BaseMTSchema):
         return variant_id.get_expr_for_alt_allele(self.mt)
 
     @row_annotation()
-    def xpos(self):
-        return variant_id.get_expr_for_xpos(self.mt.locus)
-
-    @row_annotation(disable_index=True)
-    def xstart(self):
-        return variant_id.get_expr_for_xpos(self.mt.locus)
-
-    @row_annotation(disable_index=True)
     def xstop(self):
         return variant_id.get_expr_for_xpos(self.mt.locus) + hl.len(variant_id.get_expr_for_ref_allele(self.mt)) - 1
 
@@ -144,32 +140,35 @@ class SeqrSchema(BaseMTSchema):
         return vep.get_expr_for_vep_gene_ids_set(self.mt.sortedTranscriptConsequences, only_coding_genes=True)
 
     @row_annotation()
-    def cadd(self):
-        return self._selected_ref_data.cadd
+    def clinvar(self):
+        return hl.struct(**{'allele_id': self._clinvar_data[self.mt.row_key].info.ALLELEID,
+                            'clinical_significance': hl.delimit(self._clinvar_data[self.mt.row_key].info.CLNSIG),
+                            'gold_stars': self._clinvar_data[self.mt.row_key].gold_stars})
 
     @row_annotation()
     def dbnsfp(self):
         return self._selected_ref_data.dbnsfp
 
+class SeqrSchema(BaseSeqrSchema):
     @row_annotation(disable_index=True)
-    def geno2mp(self):
-        return self._selected_ref_data.geno2mp
+    def aIndex(self):
+        return self.mt.a_index
+
+    @row_annotation(disable_index=True)
+    def wasSplit(self):
+        return self.mt.was_split
+
+    @row_annotation()
+    def cadd(self):
+        return self._selected_ref_data.cadd
 
     @row_annotation()
     def gnomad_exomes(self):
         return self._selected_ref_data.gnomad_exomes
 
-    @row_annotation(disable_index=True)
-    def gnomad_exome_coverage(self):
-        return self._selected_ref_data.gnomad_exome_coverage
-
     @row_annotation()
     def gnomad_genomes(self):
         return self._selected_ref_data.gnomad_genomes
-
-    @row_annotation(disable_index=True)
-    def gnomad_genome_coverage(self):
-        return self._selected_ref_data.gnomad_genome_coverage
 
     @row_annotation()
     def eigen(self):
@@ -178,10 +177,6 @@ class SeqrSchema(BaseMTSchema):
     @row_annotation()
     def exac(self):
         return self._selected_ref_data.exac
-
-    @row_annotation()
-    def g1k(self):
-        return self._selected_ref_data.g1k
 
     @row_annotation()
     def mpc(self):
@@ -200,6 +195,10 @@ class SeqrSchema(BaseMTSchema):
         return self._selected_ref_data.topmed
 
     @row_annotation()
+    def alpha_missense(self):
+        return self._selected_ref_data.alpha_missense
+
+    @row_annotation()
     def hgmd(self):
         if self._hgmd_data is None:
             raise RowAnnotationOmit
@@ -207,30 +206,55 @@ class SeqrSchema(BaseMTSchema):
                             'class': self._hgmd_data[self.mt.row_key].info.CLASS})
 
     @row_annotation()
-    def clinvar(self):
-        return hl.struct(**{'allele_id': self._clinvar_data[self.mt.row_key].info.ALLELEID,
-                            'clinical_significance': hl.delimit(self._clinvar_data[self.mt.row_key].info.CLNSIG),
-                            'gold_stars': self._clinvar_data[self.mt.row_key].gold_stars})
+    def gnomad_non_coding_constraint(self):
+        if self._interval_ref_data is None:
+            raise RowAnnotationOmit
+        return hl.struct(
+            **{
+                "z_score": self._interval_ref_data.index(
+                    self.mt.locus, all_matches=True
+                )
+                .filter(
+                    lambda x: hl.is_defined(x.gnomad_non_coding_constraint["z_score"])
+                )
+                .gnomad_non_coding_constraint.z_score.first()
+            }
+        )
 
+    @row_annotation()
+    def screen(self):
+        if self._interval_ref_data is None:
+            raise RowAnnotationOmit
+        return hl.struct(
+            **{
+                "region_type": self._interval_ref_data.index(
+                    self.mt.locus, all_matches=True
+                ).flatmap(lambda x: x.screen["region_type"])
+            }
+        )
 
 class SeqrVariantSchema(SeqrSchema):
 
     @row_annotation(name='AC')
     def ac(self):
-        return self.mt.info.AC[self.mt.a_index-1]
+        return self.mt.gt_stats.AC[1]
 
     @row_annotation(name='AF')
     def af(self):
-        return self.mt.info.AF[self.mt.a_index-1]
+        return self.mt.gt_stats.AF[1]
 
     @row_annotation(name='AN', disable_index=True)
     def an(self):
-        return self.mt.info.AN
+        return self.mt.gt_stats.AN
+
+    @row_annotation(name='homozygote_count')
+    def hom_alt(self):
+        return self.mt.gt_stats.homozygote_count[1]
 
 
 class SeqrGenotypesSchema(BaseMTSchema):
 
-    @row_annotation()
+    @row_annotation(disable_index=True)
     def genotypes(self):
         return hl.agg.collect(hl.struct(**self._genotype_fields()))
 
@@ -241,7 +265,7 @@ class SeqrGenotypesSchema(BaseMTSchema):
     @row_annotation(fn_require=genotypes)
     def samples_num_alt(self, start=1, end=3, step=1):
         return hl.struct(**{
-            '%i' % i: self._genotype_filter_samples(lambda g: g.num_alt == i)
+            f'{i}': self._genotype_filter_samples(lambda g: g.num_alt == i)
             for i in range(start, end, step)
         })
 
@@ -249,7 +273,7 @@ class SeqrGenotypesSchema(BaseMTSchema):
     def samples_gq(self, start=0, end=95, step=5):
         # struct of x_to_y to a set of samples in range of x and y for gq.
         return hl.struct(**{
-            '%i_to_%i' % (i, i+step): self._genotype_filter_samples(lambda g: ((g.gq >= i) & (g.gq < i+step)))
+            f'{i}_to_{i + step}': self._genotype_filter_samples(lambda g: ((g.gq >= i) & (g.gq < i+step)))
             for i in range(start, end, step)
         })
 
@@ -257,11 +281,14 @@ class SeqrGenotypesSchema(BaseMTSchema):
     def samples_ab(self, start=0, end=45, step=5):
         # struct of x_to_y to a set of samples in range of x and y for ab.
         return hl.struct(**{
-            '%i_to_%i' % (i, i+step): self._genotype_filter_samples(
+            f'{i}_to_{i + step}': self._genotype_filter_samples(
                 lambda g: ((g.num_alt == 1) & ((g.ab*100) >= i) & ((g.ab*100) < i+step))
             )
             for i in range(start, end, step)
         })
+
+    def _num_alt(self, is_called):
+        return hl.if_else(is_called, self.mt.GT.n_alt_alleles(), -1)
 
     def _genotype_filter_samples(self, filter):
         # Filter on the genotypes.
@@ -271,20 +298,67 @@ class SeqrGenotypesSchema(BaseMTSchema):
         # Convert the mt genotype entries into num_alt, gq, ab, dp, and sample_id.
         is_called = hl.is_defined(self.mt.GT)
         return {
-            'num_alt': hl.cond(is_called, self.mt.GT.n_alt_alleles(), -1),
-            'gq': hl.cond(is_called, self.mt.GQ, 0),
+            'num_alt': self._num_alt(is_called),
+            'gq': hl.if_else(is_called, self.mt.GQ, 0),
             'ab': hl.bind(
-                lambda total: hl.cond((is_called) & (total != 0) & (hl.len(self.mt.AD) > 1),
+                lambda total: hl.if_else((is_called) & (total != 0) & (hl.len(self.mt.AD) > 1),
                                       hl.float(self.mt.AD[1] / total),
-                                      hl.null(hl.tfloat)),
+                                      hl.missing(hl.tfloat)),
                 hl.sum(self.mt.AD)
             ),
-            'dp': hl.cond(is_called, hl.int(hl.min(self.mt.DP, 32000)), hl.null(hl.tfloat)),
+            'dp': hl.if_else(is_called & hl.is_defined(self.mt.AD), hl.int(hl.min(hl.sum(self.mt.AD), 32000)), hl.missing(hl.tint)),
             'sample_id': self.mt.s
         }
 
 
-class SeqrVariantsAndGenotypesSchema(SeqrVariantSchema, SeqrGenotypesSchema):
+class SeqrMcriVariantSchema(BaseSeqrSchema):
+
+    @row_annotation(name='pop_mcri_AC')
+    def acMcri(self):
+        return self.mt.info.get('AC_MCRI', hl.missing(hl.tint))
+
+    @row_annotation(name='pop_mcri_AN')
+    def anMcri(self):
+        return self.mt.info.get('AN_MCRI', hl.missing(hl.tint))
+
+    @row_annotation(name='pop_mcri_AF')
+    def afMcri(self):
+        return self.mt.info.get('AF_MCRI', hl.missing(hl.tfloat))
+
+    @row_annotation(name='genetale_all_diseases')
+    def genetaleAllDiseases(self):
+        return self.mt.info.get('GT.All.Diseases', hl.empty_array(hl.tstr))
+
+    @row_annotation(name='genetale_all_inheritances')
+    def genetaleAllInheritances(self):
+        return self.mt.info.get('GT.All.Inheritances', hl.empty_array(hl.tstr))
+
+    @row_annotation(name='genetale_alt_res_flag')
+    def genetaleAltResFlag(self):
+        return self.mt.info.get('GT.Alt.Res.Flag', hl.empty_array(hl.tstr))
+
+    @row_annotation(name='genetale_flag')
+    def genetaleFlag(self):
+        return self.mt.info.get('GT.Flag', hl.empty_array(hl.tstr))
+
+    @row_annotation(name='genetale_gene_class_info')
+    def genetaleGeneClassInfo(self):
+        return self.mt.info.get('GT.GeneClass.Info', hl.empty_array(hl.tstr))
+
+    @row_annotation(name='genetale_gene_class')
+    def genetaleGeneClass(self):
+        return self.mt.info.get('GT.GeneClass', hl.null('str'))
+
+    @row_annotation(name='genetale_previous')
+    def genetalePrevious(self):
+        return self.mt.info.get('GT.Previous', hl.empty_array(hl.tstr))
+
+    @row_annotation(name='genetale_var_class_num')
+    def genetaleVarClassNum(self):
+        return self.mt.info.get('GT.VarClass.Num', hl.null('int'))
+
+
+class SeqrVariantsAndGenotypesSchema(SeqrVariantSchema, SeqrGenotypesSchema, SeqrMcriVariantSchema):
     """
     Combined variant and genotypes.
     """
@@ -304,11 +378,12 @@ class SeqrVariantsAndGenotypesSchema(SeqrVariantSchema, SeqrGenotypesSchema):
         # Converts a mt to the row equivalent.
         if isinstance(ds, hl.MatrixTable):
             ds = ds.rows()
+        if 'vep' in ds.row:
+            ds = ds.drop('vep')
+        key = ds.key
         # Converts nested structs into one field, e.g. {a: {b: 1}} => a.b: 1
-        table = ds.drop('vep').flatten()
-        # When flattening, the table is unkeyed, which causes problems because our locus and alleles should not
+        table = ds.flatten()
+        # When flattening, the table is unkeyed, which causes problems because our row keys should not
         # be normal fields. We can also re-key, but I believe this is computational?
-        table = table.drop(table.locus, table.alleles)
-
-
-        return table
+        # PS: row key is often locus and allele, but does not have to be
+        return table.drop(*key)

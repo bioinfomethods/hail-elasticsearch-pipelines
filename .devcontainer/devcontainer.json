@@ -1,0 +1,93 @@
+{
+  "name": "slpdev",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "docker-compose.devcontainer.yml"
+  ],
+  "runServices": [],
+  "service": "slpdev",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Set *default* container specific settings.json values on container create.
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+        "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+        "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+        "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+        "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+        "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+        "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+      },
+
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "Vue.volar",
+        "vue.vscode-typescript-vue-plugin",
+        "mtxr.sqltools",
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.vscode-jupyter-cell-tags",
+        "ms-toolsai.jupyter-renderers",
+        "ms-toolsai.vscode-jupyter-slideshow",
+        "ms-toolsai.vscode-jupyter-powertoys",
+        "donjayamanne.python-environment-manager",
+        "batisteo.vscode-django",
+        "ms-playwright.playwright",
+        "ms-python.pylint",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "timonwong.shellcheck",
+        "bmalehorn.shell-syntax",
+        "foxundermoon.shell-format",
+        "mutantdino.resourcemonitor",
+        "GitHub.copilot",
+        "GitHub.copilot-labs",
+        "GitHub.copilot-chat",
+        "BitBelt.converttoasciiart",
+        "stkb.rewrap",
+        "sgryjp.vscode-stable-sort",
+        "bibhasdn.unique-lines",
+        "yo1dog.cursor-align",
+        "vscode.merge-conflict",
+        "syler.sass-indented",
+        "yzhang.markdown-all-in-one",
+        "jebbs.plantuml",
+        "george-alisson.html-preview-vscode",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "mechatroner.rainbow-csv",
+        "VisualStudioExptTeam.vscodeintellicode"
+      ]
+    }
+  },
+
+  "mounts": [
+    "source=${localEnv:HOME}/.config,target=/root/.config,type=bind,consistency=delegated",
+    "source=${localWorkspaceFolder}/.devcontainer/.cache,target=/root/.cache,type=bind,consistency=delegated"
+  ],
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  "forwardPorts": [
+  ],
+
+  // Use 'initializeCommand' to run commands before the container is created, runs on host.
+  "initializeCommand": "bash -i .devcontainer/initialize.sh",
+
+  // Use 'postCreateCommand' to run commands after the container is created, runs in container.
+  "postCreateCommand": "bash -i .devcontainer/postCreate.sh",
+
+  // Use 'postStartCommand' to run commands everytime the container is started, runs in container.
+  "postStartCommand": "bash -i .devcontainer/postStart.sh"
+
+  // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+  // "remoteUser": "root"
+}
