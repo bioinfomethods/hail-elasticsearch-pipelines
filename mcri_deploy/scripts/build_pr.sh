@@ -101,7 +101,7 @@ build_pr() {
     docker push "$CONTAINER_REGISTRY/$PIPELINE_RUNNER_IMAGE_NAME:$SLP_LONG_GIT_TAG"
 
     if [[ "$1" == "seqr-loading-pipelines" ]]; then
-        SLP_VERSION="v$(date +"%Y.%m.%d")_00"
+        SLP_VERSION="$(git describe --always)"
         docker tag "$CONTAINER_REGISTRY/$PIPELINE_RUNNER_IMAGE_NAME:$PIPELINE_RUNNER_IMAGE_TAG" "$CONTAINER_REGISTRY/$PIPELINE_RUNNER_IMAGE_NAME:$SLP_VERSION"
         docker push "$CONTAINER_REGISTRY/$PIPELINE_RUNNER_IMAGE_NAME:$SLP_VERSION"
     fi
