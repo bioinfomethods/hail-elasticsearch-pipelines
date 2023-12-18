@@ -15,9 +15,9 @@
         "--dir_cache",
         "/hpc/genomeref/hg38/seqr/vep_data",
         "--fasta",
-        "/hpc/genomeref/hg38/seqr/vep_data/homo_sapiens/Homo_sapiens.106.GRCh38.dna.primary_assembly.fa",
+        "/hpc/genomeref/hg38/seqr/vep_data/homo_sapiens/Homo_sapiens.110.GRCh38.dna.primary_assembly.fa",
         "--plugin",
-        "AlphaMissense,LoF,gerp_bigwig:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/gerp_conservation_scores.homo_sapiens.GRCh38.bw,human_ancestor_fa:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/human_ancestor.fa.gz,conservation_file:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/loftee.sql",
+        "LoF,gerp_bigwig:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/gerp_conservation_scores.homo_sapiens.GRCh38.bw,human_ancestor_fa:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/human_ancestor.fa.gz,conservation_file:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/loftee.sql",
         "-o",
         "STDOUT"
     ],
