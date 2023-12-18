@@ -99,7 +99,7 @@ google-resumable-media==2.5.0
     # via google-cloud-storage
 googleapis-common-protos==1.59.0
     # via google-api-core
-hail==0.2.115
+hail==0.2.120
     # via -r requirements.in
 httplib2==0.22.0
     # via
