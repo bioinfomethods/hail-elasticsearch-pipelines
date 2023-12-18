@@ -26,7 +26,7 @@ azure-identity==1.12.0
     # via hail
 azure-storage-blob==12.16.0
     # via hail
-bokeh==1.4.0
+bokeh==3.3.1
     # via hail
 boto3==1.26.126
     # via hail
