@@ -136,6 +136,7 @@ class SeqrVCFToMTTask(HailMatrixTableTask):
             mt = self.add_37_coordinates(mt, self.grch38_to_grch37_ref_chain)
         mt = self.generate_callstats(mt)
         if self.RUN_VEP:
+            mt = mt.filter_rows((mt.alleles[0] != '*') & (mt.alleles[1] != '*'))
             mt = HailMatrixTableTask.run_vep(mt, self.genome_version, self.vep_runner,
                                              vep_config_json_path=self.vep_config_json_path)
 
