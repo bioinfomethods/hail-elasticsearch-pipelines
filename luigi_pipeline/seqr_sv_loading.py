@@ -32,7 +32,7 @@ class SeqrSVVariantMTTask(SeqrVCFToVariantMTTask):
     gencode_release = luigi.IntParameter(default=42)
     gencode_path = luigi.OptionalParameter(default="", description="Path for downloaded gencode data")
     RUN_VEP = False
-    SCHEMA_CLASS = SeqrSVVariantSchema
+    SCHEMA_CLASS = SeqrSVVariantsAndGenotypesSchema
 
     # NB: electing not to override import_vcf here eventhough the inherited args are slightly different
     # than from the old pipeline.
