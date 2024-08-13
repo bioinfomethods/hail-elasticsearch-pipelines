@@ -52,7 +52,8 @@ def get_cpx_interval(x):
     type_chr = x.split('_chr')
     chr_pos = type_chr[1].split(':')
     pos = chr_pos[1].split('-')
-    return hl.struct(type=type_chr[0], chrom=chr_pos[0], start=hl.int32(pos[0]), end=hl.int32(pos[1]))
+
+    return hl.struct(type=type_chr[0], chrom=chr_pos[0], start=hl.parse_int32(pos[0]), end=hl.parse_int32(pos[1]))
 
 
 class SeqrSVVariantSchema(BaseVariantSchema):
@@ -228,6 +229,7 @@ class SeqrSVGenotypesSchema(SeqrGenotypesSchema):
         concordant_genotype = num_alt == prev_num_alt
         discordant_genotype = (num_alt != prev_num_alt) & (prev_num_alt > 0)
         novel_genotype = (num_alt != prev_num_alt) & (prev_num_alt == 0)
+
         return {
             'sample_id': self.mt.s,
             'gq': self.mt.GQ,
