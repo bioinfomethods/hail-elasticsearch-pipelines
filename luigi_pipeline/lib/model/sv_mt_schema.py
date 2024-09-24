@@ -112,6 +112,10 @@ class SeqrSVVariantSchema(BaseVariantSchema):
     def gnomad_svs_an(self):
         return unsafe_cast_int32(self.mt.info.gnomAD_V2_AN)
 
+    @row_annotation(name='gnomad_svs_HOMALT')
+    def gnomad_svs_homalt(self):
+        return unsafe_cast_int32(self.mt.info.gnomAD_V2_HOMALT)
+
     @row_annotation(name='StrVCTVRE_score')
     def strvctvre(self):
         return hl.parse_float(self.mt.info.StrVCTVRE)
