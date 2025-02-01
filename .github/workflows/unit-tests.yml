@@ -1,11 +1,12 @@
-name: Unit Tests
+name: unit tests
 
-# Run the test suite on pushes (incl. merges) to master and dev
+# Run the test suite on pushes (incl. merges) to main and dev
 # Run the test suite when a PR is opened, pushed to, or reopened
 on:
   push:
     branches:
-      - master
+      - dev
+      - main
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -14,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: ['3.11']
 
     steps:
       - uses: actions/checkout@v3
@@ -28,10 +29,23 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -r requirements-dataproc.txt
           pip install -r requirements-dev.txt
-      - name: Check Import Sort
-        run: isort . --check --diff
-      - name: Check Black
-        run: black . --check --diff
+      - name: Check Ruff Format
+        run: ruff format --check v03_pipeline --diff
       - name: Check Ruff
-        run: ruff . --format github
+        run: ruff . --output-format github
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: error
+          scandir: './v03_pipeline/bin'
+      - name: Unit Tests
+        run: |
+          export GRCH37_TO_GRCH38_LIFTOVER_REF_PATH=v03_pipeline/var/test/liftover/grch37_to_grch38.over.chain.gz
+          export GRCH38_TO_GRCH37_LIFTOVER_REF_PATH=v03_pipeline/var/test/liftover/grch38_to_grch37.over.chain.gz
+          export ACCESS_PRIVATE_REFERENCE_DATASETS=1
+          export INCLUDE_PIPELINE_VERSION_IN_PREFIX=1
+          export PYSPARK_SUBMIT_ARGS='--driver-memory 8G pyspark-shell'
+          nosetests --with-coverage --cover-package v03_pipeline/lib v03_pipeline/lib
+          coverage report --omit '*test*' --fail-under=75

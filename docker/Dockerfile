@@ -2,7 +2,7 @@ FROM bitnami/minideb:bullseye
 
 LABEL maintainer="Broad TGG"
 
-# install commmon utilities
+# install common utilities
 RUN install_packages \
     ca-certificates \
     less \
@@ -22,23 +22,25 @@ RUN install_packages \
     build-essential \
     libcurl4-openssl-dev \
     libbz2-dev \
-    liblzma-dev
+    liblzma-dev \
+    procps \
+    liblapack3 \
+    libopenblas0
 
-RUN apt-get update \
-	&& apt-get dist-upgrade -y \
-	&& apt-get install -y --no-install-recommends libncursesw5-dev libgdbm-dev libc6-dev zlib1g-dev libsqlite3-dev libssl-dev openssl libffi-dev sudo \
-	&& apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
+# install java-11    (adds 340Mb)
 RUN install_packages ca-certificates-java && install_packages default-jdk
 
-ENV JAVA_HOME=/usr/lib/jvm/default-java
-ENV PYTHON_VERSION="3.9.18"
-ENV PYTHON_RELEASE="3.9"
+# install python3.10 (adds 800Mb)
+RUN apt-get update \
+       && apt-get dist-upgrade -y \
+       && apt-get install -y --no-install-recommends python3-smbus python3-pkg-resources libncursesw5-dev libgdbm-dev libc6-dev zlib1g-dev libsqlite3-dev libssl-dev openssl libffi-dev sudo \
+       && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
+ENV PYTHON_VERSION="3.10.13"
 RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz \
-	&& tar xvf Python-${PYTHON_VERSION}.tar.xz \
-	&& rm Python-${PYTHON_VERSION}.tar.xz
+       && tar xvf Python-${PYTHON_VERSION}.tar.xz \
+       && rm Python-${PYTHON_VERSION}.tar.xz
 WORKDIR /Python-${PYTHON_VERSION}
 RUN ./configure --enable-optimizations \
     && make install \
@@ -51,20 +53,10 @@ RUN install_packages python-pkg-resources
 RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install --no-cache-dir -U crcmod
 
-ENV GCLOUD_CLI_VERSION="454.0.0"
 ENV CLOUDSDK_PYTHON=python3
-RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
-RUN tar xzf google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz && rm google-cloud-cli-${GCLOUD_CLI_VERSION}-linux-x86_64.tar.gz
+RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-455.0.0-linux-x86_64.tar.gz
+RUN tar xzf google-cloud-sdk-455.0.0-linux-x86_64.tar.gz && rm google-cloud-sdk-455.0.0-linux-x86_64.tar.gz
 RUN /google-cloud-sdk/install.sh -q
-
-# python packages
-RUN python3 -m pip install --upgrade gsutil
-
-# install GCS connector using the same steps as in https://raw.githubusercontent.com/broadinstitute/install-gcs-connector/master/install_gcs_connector.py
-# assumes ~/.config/gcloud/application_default_credentials.json will be mounted into the docker container
-RUN python3 -m pip install hail
-COPY docker/spark-defaults.conf /usr/local/lib/python${PYTHON_RELEASE}/site-packages/pyspark/conf/spark-defaults.conf
-RUN wget https://repo1.maven.org/maven2/com/google/cloud/bigdataoss/gcs-connector/hadoop2-2.2.9/gcs-connector-hadoop2-2.2.9-shaded.jar -O /usr/local/lib/python${PYTHON_RELEASE}/site-packages/pyspark/jars/gcs-connector-hadoop2-2.2.9-shaded.jar
 
 # install htslib
 ENV SAMTOOLS_VERSION="1.18"
@@ -80,7 +72,7 @@ WORKDIR /
 
 # install VEP dependencies
 RUN wget https://raw.github.com/miyagawa/cpanminus/master/cpanm -O /usr/bin/cpanm && chmod +x /usr/bin/cpanm
-ENV VEP_VERSION="106"
+ENV VEP_VERSION="110"
 RUN wget https://github.com/Ensembl/ensembl-vep/archive/release/${VEP_VERSION}.zip \
     && unzip ${VEP_VERSION}.zip \
     && rm ${VEP_VERSION}.zip
@@ -98,12 +90,17 @@ RUN /usr/bin/cpanm --notest  List::MoreUtils
 
 # install VEP
 WORKDIR /ensembl-vep-release-${VEP_VERSION}
-RUN perl INSTALL.pl -a ap -n -l -g all
+RUN perl INSTALL.pl -a ap -n -g all
 RUN ln -s /ensembl-vep-release-${VEP_VERSION}/vep /vep
 
 WORKDIR /seqr-loading-pipelines
 COPY requirements.txt .
-RUN python3 -m pip install -r ./requirements.txt
+RUN python3 -m pip install --no-cache-dir -r ./requirements.txt
+
+# install GCS connector using the same steps as in https://raw.githubusercontent.com/broadinstitute/install-gcs-connector/master/install_gcs_connector.py
+# assumes ~/.config/gcloud/application_default_credentials.json will be mounted into the docker container
+COPY docker/spark-defaults.conf /usr/local/lib/python3.10/site-packages/pyspark/conf/spark-defaults.conf
+RUN wget https://repo1.maven.org/maven2/com/google/cloud/bigdataoss/gcs-connector/hadoop2-2.2.18/gcs-connector-hadoop2-2.2.18-shaded.jar -O /usr/local/lib/python3.10/site-packages/pyspark/jars/gcs-connector-hadoop2-2.2.18-shaded.jar
 
 # copy files from seqr-loading-pipelines repo
 COPY hail_builds/ ./hail_builds
@@ -116,7 +113,7 @@ COPY docker/bashrc /root/.bashrc
 COPY docker/gitconfig /root/.gitconfig
 COPY docker/bin/*.sh /usr/local/bin/
 
-ENV PATH=/usr/local/lib/python${PYTHON_RELEASE}/site-packages/pyspark/bin:/google-cloud-sdk/bin:$PATH
+ENV PATH=/usr/local/lib/python3.10/site-packages/pyspark/bin:/google-cloud-sdk/bin:$PATH
 ENV PYTHONPATH=".:/seqr-loading-pipelines:/seqr-loading-pipelines/luigi_pipeline"
 
 COPY docker/entrypoint.sh /

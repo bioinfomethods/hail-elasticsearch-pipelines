@@ -1,4 +1,7 @@
 elasticsearch==7.9.1
 google-api-python-client>=1.8.0
-hail>=0.2.120
-luigi==2.8.11
+hail==0.2.133
+luigi==3.5.2
+gnomad==0.6.4
+aiofiles==24.1.0
+pydantic==2.8.2
