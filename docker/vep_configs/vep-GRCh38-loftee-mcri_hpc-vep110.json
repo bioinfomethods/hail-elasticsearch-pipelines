@@ -1,25 +1,17 @@
 {
     "command": [
         "/hpc/genomeref/ensembl-vep-release-110/vep",
-        "--format",
-        "vcf",
-        "__OUTPUT_FORMAT_FLAG__",
-        "--everything",
+        "--format", "vcf",
+        "__OUTPUT_FORMAT_FLAG__", "--everything",
         "--allele_number",
         "--no_stats",
-        "--cache",
-        "--offline",
+        "--cache", "--offline",
         "--minimal",
-        "--assembly",
-        "GRCh38",
-        "--dir_cache",
-        "/hpc/genomeref/hg38/seqr/vep_data",
-        "--fasta",
-        "/hpc/genomeref/hg38/seqr/vep_data/homo_sapiens/Homo_sapiens.110.GRCh38.dna.primary_assembly.fa",
-        "--plugin",
-        "LoF,gerp_bigwig:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/gerp_conservation_scores.homo_sapiens.GRCh38.bw,human_ancestor_fa:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/human_ancestor.fa.gz,conservation_file:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/loftee.sql",
-        "-o",
-        "STDOUT"
+        "--assembly", "GRCh38",
+        "--dir_cache", "/hpc/genomeref/hg38/seqr/vep_data",
+        "--fasta", "/hpc/genomeref/hg38/seqr/vep_data/homo_sapiens/Homo_sapiens.110.GRCh38.dna.primary_assembly.fa",
+        "--plugin", "LoF,gerp_bigwig:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/gerp_conservation_scores.homo_sapiens.GRCh38.bw,human_ancestor_fa:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/human_ancestor.fa.gz,conservation_file:/hpc/genomeref/hg38/seqr/vep_data/loftee_data/GRCh38/loftee.sql",
+        "-o", "STDOUT"
     ],
     "env": {
         "PERL5LIB": "/hpc/bpipeLibrary/shared/perlbrew-0.98/.perlbrew/libs/perl-5.36.1@vep-110/lib/perl5"
