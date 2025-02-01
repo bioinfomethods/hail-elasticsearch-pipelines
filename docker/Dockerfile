@@ -84,6 +84,7 @@ RUN /usr/bin/cpanm --notest DBI
 RUN /usr/bin/cpanm --notest CGI
 RUN /usr/bin/cpanm --notest JSON
 RUN /usr/bin/cpanm --notest Try::Tiny
+RUN /usr/bin/cpanm --notest LWP::Simple
 # LoFTEE dependencies
 RUN /usr/bin/cpanm --notest DBD::SQLite
 RUN /usr/bin/cpanm --notest  List::MoreUtils
