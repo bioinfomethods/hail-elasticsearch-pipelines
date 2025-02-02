@@ -107,6 +107,7 @@ RUN wget https://repo1.maven.org/maven2/com/google/cloud/bigdataoss/gcs-connecto
 COPY hail_builds/ ./hail_builds
 COPY hail_scripts/ ./hail_scripts
 COPY luigi_pipeline/ ./luigi_pipeline
+RUN python3 -m pip install --no-cache-dir -r ./luigi_pipeline/requirements.txt
 
 COPY docker/vep_configs/* /vep_configs/
 
