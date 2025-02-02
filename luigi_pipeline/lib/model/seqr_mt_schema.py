@@ -195,10 +195,6 @@ class SeqrSchema(BaseSeqrSchema):
         return self._selected_ref_data.topmed
 
     @row_annotation()
-    def alpha_missense(self):
-        return self._selected_ref_data.alpha_missense
-
-    @row_annotation()
     def hgmd(self):
         if self._hgmd_data is None:
             raise RowAnnotationOmit

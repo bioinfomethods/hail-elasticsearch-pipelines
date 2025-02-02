@@ -1,3 +1,8 @@
+'''
+This script is deprecated and no longer used.  Alpha missense variant annotations are now done by VEP plugin in the
+pipeline.
+'''
+
 import hail as hl
 
 hl.init()
